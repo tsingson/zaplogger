@@ -1,18 +1,26 @@
 # Build and Release Folders
+bin/
 bin-debug/
 bin-release/
-[Oo]bj/
-[Bb]in/
-
+[Oo]bj/ # FlashDevelop obj
+[Bb]in/ # FlashDevelop bin
+vender/
+golang/vender/
 # Other files and folders
 .settings/
-
+node_modules/
+vod-ts-data/
+vod-test/
+.idea/
+vendor/
+deployment/
+test/
+vod-ts-data/
 # Executables
 *.swf
 *.air
 *.ipa
 *.apk
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+
+
