@@ -66,6 +66,12 @@ func Warningf(template string, args ...interface{}) {
 	defaultzap.Log.Warn(fmt.Sprintf(template, args...))
 }
 
+// Warning logs a message at level Warn on the ZapLogger.
+func Warning(args ...interface{}) {
+
+	defaultzap.Log.Warn(fmt.Sprint(args...))
+}
+
 // Error logs a message at level Error on the ZapLogger.
 func Error(args ...interface{}) {
 	defaultzap.Log.Error(fmt.Sprint(args...))
