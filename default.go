@@ -114,3 +114,8 @@ func Printf(format string, args ...interface{}) {
 func Print(args ...interface{}) {
 	defaultzap.Log.Info(fmt.Sprint(args...))
 }
+
+// Println logs a message at level Info on the ZapLogger.
+func Println(args ...interface{}) {
+	defaultzap.Log.Info(fmt.Sprint(args...))
+}
