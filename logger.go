@@ -71,7 +71,7 @@ func newZapCore(path, prefix string, level zapcore.Level) zapcore.Core {
 		Compress:   false, // 开发时不压缩
 	}
 
-	wdiode := diode.NewWriter(LumberLogger, 1000, 10*time.Millisecond, func(missed int) {
+	wdiode := diode.NewWriter(LumberLogger, 1024*1024*4, 50*time.Millisecond, func(missed int) {
 		fmt.Printf("Logger Dropped %d messages", missed)
 	})
 
