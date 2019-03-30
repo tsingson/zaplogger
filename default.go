@@ -2,6 +2,7 @@ package zaplogger
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/afero"
 )
@@ -21,7 +22,7 @@ func init() {
 		}
 	}
 
-	log := NewZapLog(LogFullPath, "debug-", true)
+	log := NewZapLog(LogFullPath, os.Args[0], true)
 	defaultzap = &ZapLogger{
 		Log: log,
 	}
