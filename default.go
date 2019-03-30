@@ -23,10 +23,33 @@ func init() {
 	}
 
 	log := NewZapLog(LogFullPath, os.Args[0], true)
-	defaultzap = &ZapLogger{
+	defaultzap = &Logger{
 		Log: log,
 	}
+}
 
+func New(fh string, flag bool) *Logger {
+	var err error
+	var LogFullPath string
+	var afs = afero.NewOsFs()
+	if len(fh) == 0 {
+		LogFullPath, _ = getCurrentExecDir()
+	} else {
+		LogFullPath = fh
+	}
+
+	check, _ := afero.DirExists(afs, LogFullPath)
+	if !check {
+		err = afs.MkdirAll(LogFullPath, 0755)
+		if err != nil {
+			panic("mkdir log path fail")
+		}
+	}
+
+	log := NewZapLog(LogFullPath, os.Args[0], flag)
+	return &Logger{
+		Log: log,
+	}
 }
 
 // Debug logs a message at level Debug on the ZapLogger.
