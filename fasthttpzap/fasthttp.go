@@ -10,13 +10,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type ZapLogger struct {
+type Logger struct {
 	Log *zap.Logger
 }
 
 // FastHttpZapLogHandler
 // middle-ware for fasthttp
-func (l *ZapLogger) FastHttpZapLogHandler(next phi.RequestHandlerFunc) phi.RequestHandlerFunc {
+func (l *Logger) FastHttpZapLogHandler(next phi.RequestHandlerFunc) phi.RequestHandlerFunc {
 	return func(ctx *fasthttp.RequestCtx) {
 		startTime := time.Now()
 		next(ctx)

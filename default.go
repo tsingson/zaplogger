@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var defaultzap *ZapLogger
+var defaultzap *Logger
 
 func init() {
 	var err error
