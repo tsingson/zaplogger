@@ -2,7 +2,9 @@ package zaplogger
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/spf13/afero"
 	"go.uber.org/zap"
 )
 
@@ -16,10 +18,34 @@ type Logger struct {
 
 type ZapLogger = Logger
 
+func New(fh string, flag bool) *Logger {
+	var err error
+	var LogFullPath string
+	var afs = afero.NewOsFs()
+	if len(fh) == 0 {
+		LogFullPath, _ = getCurrentExecDir()
+	} else {
+		LogFullPath = fh
+	}
+
+	check, _ := afero.DirExists(afs, LogFullPath)
+	if !check {
+		err = afs.MkdirAll(LogFullPath, 0755)
+		if err != nil {
+			panic("mkdir log path fail")
+		}
+	}
+
+	log := NewZapLog(LogFullPath, os.Args[0], flag)
+	return &Logger{
+		Log: log,
+	}
+}
+
 // NewProduction new log for production
 func NewProduction() *Logger {
 	log, _ := zap.NewProduction()
-	return &ZapLogger{
+	return &Logger{
 		Log: log,
 	}
 }
@@ -27,21 +53,21 @@ func NewProduction() *Logger {
 // NewDevelopment new log for development
 func NewDevelopment() *Logger {
 	log, _ := zap.NewDevelopment()
-	return &ZapLogger{
+	return &Logger{
 		Log: log,
 	}
 }
 
 // InitZaoLogger initial
 func InitZaoLogger(log *zap.Logger) *Logger {
-	return &ZapLogger{
+	return &Logger{
 		log,
 	}
 }
 
 // NewZapLogger return ZapLogger with caller field
 func NewZapLogger() *Logger {
-	return &ZapLogger{NewLogger().WithOptions(zap.AddCallerSkip(1))}
+	return &Logger{NewLogger().WithOptions(zap.AddCallerSkip(1))}
 }
 
 // Debug logs a message at level Debug on the ZapLogger.
