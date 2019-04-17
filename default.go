@@ -7,6 +7,7 @@ import (
 var DefaultLogger *Logger
 
 func init() {
+
 	log := NewLogger()
 	DefaultLogger = &Logger{
 		Log: log,

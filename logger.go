@@ -18,7 +18,9 @@ import (
 var LogLevel = zap.NewAtomicLevelAt(zap.DebugLevel)
 
 func NewLogger() *zap.Logger {
-	path, _ := buildLogPath()
+	p, _ := getCurrentExecDir()
+	p = p + "/log"
+	path, _ := buildLogPath(p)
 	return NewZapLog(path, "default", false)
 }
 
@@ -128,7 +130,7 @@ func buildLogPath(path ...string) (logPath string, err error) {
 	} else {
 		p = path[0]
 	}
-	logPath = p + "/log"
+	logPath = p // + "/log"
 
 	afs := afero.NewOsFs()
 	check, _ := afero.DirExists(afs, logPath)
