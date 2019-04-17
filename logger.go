@@ -15,6 +15,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+var LogLevel = zap.NewAtomicLevelAt(zap.DebugLevel)
+
 func NewLogger() *zap.Logger {
 	path, _ := buildLogPath()
 	return NewZapLog(path, "default", false)
@@ -30,18 +32,18 @@ func NewZapLog(path, prefix string, stdoutFlag bool) *zap.Logger {
 		// opts = append(opts, zap.AddStacktrace(zap.WarnLevel))
 
 		std := newStdoutCore(zapcore.DebugLevel)
-		debug := newZapCore(path, prefix, zapcore.InfoLevel)
+		debug := newZapCore(path, prefix)
 
 		return zap.New(zapcore.NewTee(std, debug), opts...)
 	} else {
-		errlog := newZapCore(path, prefix, zapcore.ErrorLevel)
+		errlog := newZapCore(path, prefix)
 		return zap.New(errlog)
 	}
 
 }
 
 // NewZapLog  initial a zap logger
-func newZapCore(path, prefix string, level zapcore.Level) zapcore.Core {
+func newZapCore(path, prefix string) zapcore.Core {
 
 	dataTimeFmtInFileName := time.Now().Format("2006-01-02-15")
 	var err error
@@ -80,7 +82,7 @@ func newZapCore(path, prefix string, level zapcore.Level) zapcore.Core {
 	var w zapcore.WriteSyncer
 	w = zapcore.AddSync(wdiode)
 
-	return newCore(true, level, w)
+	return newCore(true, w)
 
 }
 
@@ -89,11 +91,11 @@ func newStdoutCore(level zapcore.Level) zapcore.Core {
 
 	w = zapcore.AddSync(os.Stdout)
 
-	return newCore(true, level, w)
+	return newCore(true, w)
 }
 
 // newZapLogger
-func newCore(jsonFlag bool, level zapcore.Level, output zapcore.WriteSyncer) zapcore.Core {
+func newCore(jsonFlag bool, output zapcore.WriteSyncer) zapcore.Core {
 
 	cfg := zapcore.EncoderConfig{
 		TimeKey:        "logtime",
@@ -115,7 +117,7 @@ func newCore(jsonFlag bool, level zapcore.Level, output zapcore.WriteSyncer) zap
 		encoder = zapcore.NewConsoleEncoder(cfg)
 	}
 
-	return zapcore.NewCore(encoder, output, zap.NewAtomicLevelAt(level))
+	return zapcore.NewCore(encoder, output, LogLevel)
 }
 
 // buildLogPath
