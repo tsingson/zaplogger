@@ -7,7 +7,6 @@ import (
 var DefaultLogger *Logger
 
 func init() {
-
 	log := NewLogger()
 	DefaultLogger = &Logger{
 		Log: log,
@@ -31,7 +30,6 @@ func Info(args ...interface{}) {
 
 // Infof logs a message at level Info on the ZapLogger.
 func Infof(template string, args ...interface{}) {
-
 	DefaultLogger.Log.Info(fmt.Sprintf(template, args...))
 }
 
