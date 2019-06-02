@@ -1,9 +1,7 @@
 package zaplogger
 
 import (
-	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/spf13/afero"
@@ -15,8 +13,10 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// LogLevel log level
 var LogLevel = zap.NewAtomicLevelAt(zap.DebugLevel)
 
+// NewLogger new zap logger
 func NewLogger() *zap.Logger {
 	p, _ := getCurrentExecDir()
 	p = p + "/log"
@@ -25,22 +25,21 @@ func NewLogger() *zap.Logger {
 }
 
 // NewZapLog  init a log
-func NewZapLog(path, prefix string, stdoutFlag bool) *zap.Logger {
-
-	opts := []zap.Option{}
+func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 
 	if stdoutFlag {
 		// opts = append(opts, zap.AddCaller())
 		// opts = append(opts, zap.AddStacktrace(zap.WarnLevel))
-
+		opts := []zap.Option{}
 		std := newStdoutCore(zapcore.DebugLevel)
 		debug := newZapCore(path, prefix)
 
-		return zap.New(zapcore.NewTee(std, debug), opts...)
+		log = zap.New(zapcore.NewTee(std, debug), opts...)
 	} else {
-		errlog := newZapCore(path, prefix)
-		return zap.New(errlog)
+
+		log = zap.New(newZapCore(path, prefix))
 	}
+	return
 
 }
 
@@ -55,43 +54,56 @@ func newZapCore(path, prefix string) zapcore.Core {
 	if err != nil {
 		// TODO: handle error
 	}
-
+	var w zapcore.WriteSyncer
 	var logFilename string
 	if len(prefix) == 0 {
 		// 	logFilename = logpath + "/pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
-		logFilename = logPath + "/pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
+		// logFilename = logPath + "/pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
 
+		wdiode := diode.NewWriter(os.Stdout, 1024*1024*4, 50*time.Millisecond, func(missed int) {
+			// 	fmt.Printf("Logger Dropped %d messages", missed)
+		})
+
+		// lumberjack.Logger is already safe for concurrent use, so we don't need to
+		// lock it.
+
+		w = zapcore.AddSync(wdiode)
 	} else {
 		// 	logFilename = logpath + "/" + prefix + "-pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
 		logFilename = logPath + "/" + prefix + "-" + dataTimeFmtInFileName + ".zlog"
 
-	}
-	var LumberLogger *lumberjack.Logger
-	LumberLogger = &lumberjack.Logger{
-		Filename:   logFilename,
-		MaxSize:    100, // megabytes
-		MaxBackups: 31,
-		MaxAge:     31,    // days
-		Compress:   false, // 开发时不压缩
-	}
+		var LumberLogger = &lumberjack.Logger{
+			Filename:   logFilename,
+			MaxSize:    100, // megabytes
+			MaxBackups: 31,
+			MaxAge:     31,    // days
+			Compress:   false, // 开发时不压缩
+		}
 
-	wdiode := diode.NewWriter(LumberLogger, 1024*1024*4, 50*time.Millisecond, func(missed int) {
-		fmt.Printf("Logger Dropped %d messages", missed)
-	})
+		wdiode := diode.NewWriter(LumberLogger, 1024*1024*4, 50*time.Millisecond, func(missed int) {
+			// 	fmt.Printf("Logger Dropped %d messages", missed)
+		})
 
-	// lumberjack.Logger is already safe for concurrent use, so we don't need to
-	// lock it.
-	var w zapcore.WriteSyncer
-	w = zapcore.AddSync(wdiode)
+		// lumberjack.Logger is already safe for concurrent use, so we don't need to
+		// lock it.
+
+		w = zapcore.AddSync(wdiode)
+	}
 
 	return newCore(true, w)
 
 }
 
 func newStdoutCore(level zapcore.Level) zapcore.Core {
-	var w zapcore.WriteSyncer
 
-	w = zapcore.AddSync(os.Stdout)
+	wdiode := diode.NewWriter(os.Stdout, 1024*1024*4, 50*time.Millisecond, func(missed int) {
+		// 	fmt.Printf("Logger Dropped %d messages", missed)
+	})
+
+	// lumberjack.Logger is already safe for concurrent use, so we don't need to
+	// lock it.
+
+	var w = zapcore.AddSync(wdiode)
 
 	return newCore(true, w)
 }
@@ -141,13 +153,13 @@ func buildLogPath(path ...string) (logPath string, err error) {
 		}
 	}
 
-	tf := logPath + "/test.log"
-	err = afero.WriteFile(afs, tf, []byte("file b"), 0644)
-	if err != nil {
-		return "", err
-	} else {
-		afs.Remove(tf)
-	}
+	// tf := logPath + "/test.log"
+	// err = afero.WriteFile(afs, tf, []byte("file b"), 0644)
+	// if err != nil {
+	// 	return "", err
+	// } else {
+	// 	_ = afs.Remove(tf)
+	// }
 
 	return logPath, nil
 }
