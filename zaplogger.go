@@ -8,10 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ZapLogger is a logger which compatible to logrus/std zlog/prometheus.
-// it implements Print() Println() Printf() Dbug() Debugln() Debugf() Info() Infoln() Infof() Warn() Warnln() Warnf()
-// Error() Errorln() Errorf() Fatal() Fataln() Fatalf() Panic() Panicln() Panicf() With() WithField() WithFields()
-
+// Logger zap logger
 type Logger struct {
 	Log *zap.Logger
 }

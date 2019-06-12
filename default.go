@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Default default logger
 var Default *Logger
 
 func init() {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/afero"
-	"gopkg.in/natefinch/lumberjack.v2"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/rs/zerolog/diode"
 
@@ -47,13 +47,11 @@ func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 func newZapCore(path, prefix string) zapcore.Core {
 
 	dataTimeFmtInFileName := time.Now().Format("2006-01-02-15")
-	var err error
+
 	var logPath string
 
-	logPath, err = buildLogPath(path)
-	if err != nil {
-		// TODO: handle error
-	}
+	logPath, _ = buildLogPath(path)
+
 	var w zapcore.WriteSyncer
 	var logFilename string
 	if len(prefix) == 0 {
