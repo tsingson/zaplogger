@@ -13,8 +13,10 @@ type Logger struct {
 	Log *zap.Logger
 }
 
+// ZapLogger alias
 type ZapLogger = Logger
 
+// New
 func New(fh string, flag bool) *Logger {
 	var err error
 	var LogFullPath string
@@ -55,8 +57,8 @@ func NewDevelopment() *Logger {
 	}
 }
 
-// InitZaoLogger initial
-func InitZaoLogger(log *zap.Logger) *Logger {
+// InitZapLogger initial
+func InitZapLogger(log *zap.Logger) *Logger {
 	return &Logger{
 		log,
 	}
