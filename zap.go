@@ -16,7 +16,7 @@ import (
 // LogLevel log level
 var LogLevel = zap.NewAtomicLevelAt(zap.DebugLevel)
 
-// NewLogger new zap logger
+// NewLogger new zap log
 func NewLogger() *zap.Logger {
 	p, _ := getCurrentExecDir()
 	p = p + "/log"
@@ -43,7 +43,7 @@ func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 
 }
 
-// NewZapLog  initial a zap logger
+// NewZapLog  initial a zap log
 func newZapCore(path, prefix string) zapcore.Core {
 
 	dataTimeFmtInFileName := time.Now().Format("2006-01-02-15")
@@ -112,7 +112,7 @@ func newCore(jsonFlag bool, output zapcore.WriteSyncer) zapcore.Core {
 	cfg := zapcore.EncoderConfig{
 		TimeKey:        "logtime",
 		LevelKey:       "level",
-		NameKey:        "logger",
+		NameKey:        "log",
 		CallerKey:      "caller",
 		MessageKey:     "msg",
 		StacktraceKey:  "stacktrace",

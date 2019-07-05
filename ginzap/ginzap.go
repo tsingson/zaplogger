@@ -18,11 +18,11 @@
 //    func main() {
 //        flag.Parse()
 //        router := gin.New()
-// 	      logger := zap.NewProduction()
-//        router.Use(ginzap.Logger(3 * time.Second, logger))
+// 	      log := zap.NewProduction()
+//        router.Use(ginzap.Logger(3 * time.Second, log))
 //        //..
 //        router.Use(gin.Recovery())
-// 		  logger.Info("Gin bootstrapped with Zap")
+// 		  log.Info("Gin bootstrapped with Zap")
 //        router.Run(":8080")
 //    }
 //
@@ -36,7 +36,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// setupLogging setups the logger to use zap
+// setupLogging setups the log to use zap
 func setupLogging(duration time.Duration, zap *zap.Logger) {
 	go func() {
 		for range time.Tick(duration) {
@@ -67,7 +67,7 @@ func ErrorLoggerT(t gin.ErrorType) gin.HandlerFunc {
 
 // Logger returns a gin handler func for all logging
 func Logger(logger *zap.Logger) gin.HandlerFunc {
-	// 	setupLogging(duration, logger)
+	// 	setupLogging(duration, log)
 
 	return func(c *gin.Context) {
 		t := time.Now()

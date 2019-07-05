@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Logger zap logger
+// Logger zap log
 type Logger struct {
 	Log *zap.Logger
 }
@@ -95,9 +95,18 @@ func (l *Logger) Warn(args ...interface{}) {
 	l.Log.Warn(fmt.Sprint(args...))
 }
 
+// Warning logs a message at level Warn on the ZapLogger.
+func (l *Logger) Warning(args ...interface{}) {
+	l.Log.Warn(fmt.Sprint(args...))
+}
+
 // Warnf logs a message at level Warn on the ZapLogger.
 func (l *Logger) Warnf(template string, args ...interface{}) {
+	l.Log.Warn(fmt.Sprintf(template, args...))
+}
 
+// Warningf logs a message at level Warn on the ZapLogger.
+func (l *Logger) Warningf(template string, args ...interface{}) {
 	l.Log.Warn(fmt.Sprintf(template, args...))
 }
 
@@ -134,7 +143,7 @@ func (l *Logger) Panicf(template string, args ...interface{}) {
 	l.Log.Panic(fmt.Sprintf(template, args...))
 }
 
-// With return a logger with an extra field.
+// With return a log with an extra field.
 func (l *Logger) With(key string, value interface{}) *Logger {
 	return &ZapLogger{l.Log.With(zap.Any(key, value))}
 }
@@ -149,12 +158,12 @@ func (l *Logger) Print(args ...interface{}) {
 	l.Log.Info(fmt.Sprint(args...))
 }
 
-// WithField return a logger with an extra field.
+// WithField return a log with an extra field.
 func (l *Logger) WithField(key string, value interface{}) *Logger {
 	return &ZapLogger{l.Log.With(zap.Any(key, value))}
 }
 
-// WithFields return a logger with extra fields.
+// WithFields return a log with extra fields.
 func (l *Logger) WithFields(fields map[string]interface{}) *Logger {
 	i := 0
 	var clog *Logger
