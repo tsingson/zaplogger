@@ -68,7 +68,7 @@ func newZapCore(path, prefix string) zapcore.Core {
 		w = zapcore.AddSync(wdiode)
 	} else {
 		// 	logFilename = logpath + "/" + prefix + "-pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
-		logFilename = logPath + "/" + prefix + "-" + dataTimeFmtInFileName + ".zlog"
+		logFilename = logPath + "/" + prefix + "-" + dataTimeFmtInFileName + ".log"
 
 		var LumberLogger = &lumberjack.Logger{
 			Filename:   logFilename,
