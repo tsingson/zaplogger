@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/afero"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/rs/zerolog/diode"
 
@@ -24,6 +24,76 @@ func NewLogger() *zap.Logger {
 	return NewZapLog(path, "default", false)
 }
 
+// NewConsole  new zap logger for console
+func NewConsole() zapcore.Core {
+	// First, define our level-handling logic.
+	highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl >= zapcore.ErrorLevel
+	})
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel
+	})
+	// Assume that we have clients for two Kafka topics. The clients implement
+	// zapcore.WriteSyncer and are safe for concurrent use. (If they only
+	// implement io.Writer, we can use zapcore.AddSync to add a no-op Sync
+	// method. If they're not safe for concurrent use, we can add a protecting
+	// mutex with zapcore.Lock.)
+	// topicDebugging := zapcore.AddSync(ioutil.Discard)
+	// topicErrors := zapcore.AddSync(ioutil.Discard)
+	// High-priority output should also go to standard error, and low-priority
+	// output should also go to standard out.
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	consoleErrors := zapcore.Lock(os.Stderr)
+	// Optimize the Kafka output for machine consumption and the console output
+	// for human operators.
+	// kafkaEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+	consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	// Join the outputs, encoders, and level-handling functions into
+	// zapcore.Cores, then tee the four cores together.
+	core := zapcore.NewTee(
+		// zapcore.NewCore(kafkaEncoder, topicErrors, highPriority),
+		zapcore.NewCore(consoleEncoder, consoleErrors, highPriority),
+		// zapcore.NewCore(kafkaEncoder, topicDebugging, lowPriority),
+		zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority),
+	)
+	return core
+}
+
+// NewConsoleDebug  new zap logger for console
+func NewConsoleDebug() zapcore.Core {
+	// First, define our level-handling logic.
+	// highPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+	// 	return lvl >= zapcore.ErrorLevel
+	// })
+	lowPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
+		return lvl < zapcore.ErrorLevel
+	})
+	// Assume that we have clients for two Kafka topics. The clients implement
+	// zapcore.WriteSyncer and are safe for concurrent use. (If they only
+	// implement io.Writer, we can use zapcore.AddSync to add a no-op Sync
+	// method. If they're not safe for concurrent use, we can add a protecting
+	// mutex with zapcore.Lock.)
+	// topicDebugging := zapcore.AddSync(ioutil.Discard)
+	// topicErrors := zapcore.AddSync(ioutil.Discard)
+	// High-priority output should also go to standard error, and low-priority
+	// output should also go to standard out.
+	consoleDebugging := zapcore.Lock(os.Stdout)
+	// consoleErrors := zapcore.Lock(os.Stderr)
+	// Optimize the Kafka output for machine consumption and the console output
+	// for human operators.
+	// kafkaEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+	consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	// Join the outputs, encoders, and level-handling functions into
+	// zapcore.Cores, then tee the four cores together.
+
+	// zapcore.NewCore(kafkaEncoder, topicErrors, highPriority),
+	// zapcore.NewCore(consoleEncoder, consoleErrors, highPriority)
+
+	// zapcore.NewCore(kafkaEncoder, topicDebugging, lowPriority),
+	return zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority)
+
+}
+
 // NewZapLog  init a log
 func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 
@@ -31,10 +101,11 @@ func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 		// opts = append(opts, zap.AddCaller())
 		// opts = append(opts, zap.AddStacktrace(zap.WarnLevel))
 		opts := []zap.Option{}
-		std := newStdoutCore(zapcore.DebugLevel)
+		std := NewConsoleDebug()
 		debug := newZapCore(path, prefix)
 
-		log = zap.New(zapcore.NewTee(std, debug), opts...)
+		log = zap.New(zapcore.NewTee(std, debug), opts...).WithOptions(zap.AddCaller())
+
 	} else {
 
 		log = zap.New(newZapCore(path, prefix))
