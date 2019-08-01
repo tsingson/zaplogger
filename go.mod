@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.4.0
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/afero v1.2.2
+	github.com/tsingson/phi v0.3.1
 	github.com/valyala/fasthttp v1.4.0
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect

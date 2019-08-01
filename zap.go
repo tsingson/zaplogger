@@ -94,6 +94,13 @@ func NewConsoleDebug() zapcore.Core {
 
 }
 
+// ConsoleDebug  console log for debug
+func ConsoleDebug() *zap.Logger {
+	core := NewConsoleDebug()
+	// From a zapcore.Core, it's easy to construct a Logger.
+	return zap.New(core).WithOptions(zap.AddCaller())
+}
+
 // NewZapLog  init a log
 func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 
