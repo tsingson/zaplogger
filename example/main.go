@@ -10,7 +10,7 @@ func main() {
 	core := zaplogger.NewConsoleDebug()
 
 	// From a zapcore.Core, it's easy to construct a Logger.
-	logger := zap.New(core)
+	logger := zap.New(core).WithOptions(zap.AddCaller())
 	defer logger.Sync()
 	logger.Info("constructed a logger")
 }
