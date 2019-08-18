@@ -37,6 +37,14 @@ func NewGRPCLoggerV2(lcfg zap.Config) (grpclog.LoggerV2, error) {
 	return &zapGRPCLogger{lg: lg, sugar: lg.Sugar()}, nil
 }
 
+// NewLoggerV2 new logger v2
+func NewLoggerV2(l *zap.Logger) grpclog.LoggerV2 {
+	return &zapGRPCLogger{
+		lg:    l,
+		sugar: l.Sugar(),
+	}
+}
+
 // NewGRPCLoggerV2FromZapCore creates "grpclog.LoggerV2" from "zap.Core"
 // and "zapcore.WriteSyncer". It discards all INFO level logging in gRPC,
 // if debug level is not enabled in "*zap.Logger".
