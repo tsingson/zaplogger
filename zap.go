@@ -91,7 +91,6 @@ func NewConsoleDebug() zapcore.Core {
 
 	// zapcore.NewCore(kafkaEncoder, topicDebugging, lowPriority),
 	return zapcore.NewCore(consoleEncoder, consoleDebugging, lowPriority)
-
 }
 
 // ConsoleDebug  console log for debug
@@ -103,7 +102,6 @@ func ConsoleDebug() *zap.Logger {
 
 // NewZapLog  init a log
 func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
-
 	if stdoutFlag {
 		// opts = append(opts, zap.AddCaller())
 		// opts = append(opts, zap.AddStacktrace(zap.WarnLevel))
@@ -114,16 +112,13 @@ func NewZapLog(path, prefix string, stdoutFlag bool) (log *zap.Logger) {
 		log = zap.New(zapcore.NewTee(std, debug), opts...).WithOptions(zap.AddCaller())
 
 	} else {
-
 		log = zap.New(newZapCore(path, prefix))
 	}
 	return
-
 }
 
 // NewZapLog  initial a zap log
 func newZapCore(path, prefix string) zapcore.Core {
-
 	dataTimeFmtInFileName := time.Now().Format("2006-01-02-15")
 
 	var logPath string
@@ -148,7 +143,7 @@ func newZapCore(path, prefix string) zapcore.Core {
 		// 	logFilename = logpath + "/" + prefix + "-pid-" + strconv.Itoa(os.Getpid()) + "-" + dataTimeFmtInFileName + ".zlog"
 		logFilename = logPath + "/" + prefix + "-" + dataTimeFmtInFileName + ".log"
 
-		var LumberLogger = &lumberjack.Logger{
+		LumberLogger := &lumberjack.Logger{
 			Filename:   logFilename,
 			MaxSize:    100, // megabytes
 			MaxBackups: 31,
@@ -167,11 +162,9 @@ func newZapCore(path, prefix string) zapcore.Core {
 	}
 
 	return newCore(true, w)
-
 }
 
 func newStdoutCore(level zapcore.Level) zapcore.Core {
-
 	wdiode := diode.NewWriter(os.Stdout, 1024*1024*4, 50*time.Millisecond, func(missed int) {
 		// 	fmt.Printf("Logger Dropped %d messages", missed)
 	})
@@ -179,14 +172,13 @@ func newStdoutCore(level zapcore.Level) zapcore.Core {
 	// lumberjack.Logger is already safe for concurrent use, so we don't need to
 	// lock it.
 
-	var w = zapcore.AddSync(wdiode)
+	w := zapcore.AddSync(wdiode)
 
 	return newCore(true, w)
 }
 
 // newZapLogger
 func newCore(jsonFlag bool, output zapcore.WriteSyncer) zapcore.Core {
-
 	cfg := zapcore.EncoderConfig{
 		TimeKey:        "logtime",
 		LevelKey:       "level",

@@ -18,11 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-// Package zapgrpc provides a logger that is compatible with grpclog.
-package zapgrpc // import "go.uber.org/zap/zapgrpc"
+// Package zapgrpc2 provides a logger that is compatible with grpclog.
+package zapgrpc2 // import "go.uber.org/zap/zapgrpc2"
 
 import (
-	"go.uber.org/zap"
+	zap "go.uber.org/zap"
 )
 
 // An Option overrides a Logger's default configuration.

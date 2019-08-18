@@ -20,7 +20,7 @@ type ZapLogger = Logger
 func New(fh string, flag bool) *Logger {
 	var err error
 	var LogFullPath string
-	var afs = afero.NewOsFs()
+	afs := afero.NewOsFs()
 	if len(fh) == 0 {
 		LogFullPath, _ = getCurrentExecDir()
 	} else {
@@ -86,7 +86,6 @@ func (l *Logger) Info(args ...interface{}) {
 
 // Infof logs a message at level Info on the ZapLogger.
 func (l *Logger) Infof(template string, args ...interface{}) {
-
 	l.Log.Info(fmt.Sprintf(template, args...))
 }
 
@@ -117,7 +116,6 @@ func (l *Logger) Error(args ...interface{}) {
 
 // Errorf logs a message at level Warn on the ZapLogger.
 func (l *Logger) Errorf(template string, args ...interface{}) {
-
 	l.Log.Error(fmt.Sprintf(template, args...))
 }
 
@@ -128,7 +126,6 @@ func (l *Logger) Fatal(args ...interface{}) {
 
 // Fatalf logs a message at level Warn on the ZapLogger.
 func (l *Logger) Fatalf(template string, args ...interface{}) {
-
 	l.Log.Fatal(fmt.Sprintf(template, args...))
 }
 
@@ -139,7 +136,6 @@ func (l *Logger) Panic(args ...interface{}) {
 
 // Panicf  logs a message at level Warn on the ZapLogger.
 func (l *Logger) Panicf(template string, args ...interface{}) {
-
 	l.Log.Panic(fmt.Sprintf(template, args...))
 }
 

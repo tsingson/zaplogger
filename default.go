@@ -43,19 +43,16 @@ func Warn(args ...interface{}) {
 
 // Warnf logs a message at level Warn on the ZapLogger.
 func Warnf(template string, args ...interface{}) {
-
 	Default.Log.Warn(fmt.Sprintf(template, args...))
 }
 
 // Warningf logs a message at level Warn on the ZapLogger.
 func Warningf(template string, args ...interface{}) {
-
 	Default.Log.Warn(fmt.Sprintf(template, args...))
 }
 
 // Warning logs a message at level Warn on the ZapLogger.
 func Warning(args ...interface{}) {
-
 	Default.Log.Warn(fmt.Sprint(args...))
 }
 
@@ -66,7 +63,6 @@ func Error(args ...interface{}) {
 
 // Errorf logs a message at level Warn on the ZapLogger.
 func Errorf(template string, args ...interface{}) {
-
 	Default.Log.Error(fmt.Sprintf(template, args...))
 }
 
@@ -77,7 +73,6 @@ func Fatal(args ...interface{}) {
 
 // Fatalf logs a message at level Warn on the ZapLogger.
 func Fatalf(template string, args ...interface{}) {
-
 	Default.Log.Fatal(fmt.Sprintf(template, args...))
 }
 
@@ -88,7 +83,6 @@ func Panic(args ...interface{}) {
 
 // Panicf  logs a message at level Warn on the ZapLogger.
 func Panicf(template string, args ...interface{}) {
-
 	Default.Log.Panic(fmt.Sprintf(template, args...))
 }
 
