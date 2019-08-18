@@ -21,149 +21,77 @@
 package zapgrpc2
 
 import (
+	"bytes"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
-
-	"github.com/stretchr/testify/require"
 )
 
-func TestLoggerInfoExpected(t *testing.T) {
-	checkMessages(t, zapcore.DebugLevel, nil, zapcore.InfoLevel, []string{
-		"hello",
-		"world",
-		"foo",
-		"hello",
-		"world",
-		"foo",
-	}, func(logger *Logger) {
-		logger.Info("hello")
-		logger.Infof("world")
-		logger.Infoln("foo")
-		logger.Print("hello")
-		logger.Printf("world")
-		logger.Println("foo")
-	})
-}
+func TestNewGRPCLoggerV2(t *testing.T) {
+	logPath := filepath.Join(os.TempDir(), fmt.Sprintf("test-log-%d", time.Now().UnixNano()))
+	defer os.RemoveAll(logPath)
 
-func TestLoggerDebugExpected(t *testing.T) {
-	checkMessages(t, zapcore.DebugLevel, []Option{WithDebug()}, zapcore.DebugLevel, []string{
-		"hello",
-		"world",
-		"foo",
-	}, func(logger *Logger) {
-		logger.Print("hello")
-		logger.Printf("world")
-		logger.Println("foo")
-	})
-}
-
-func TestLoggerDebugSuppressed(t *testing.T) {
-	checkMessages(t, zapcore.InfoLevel, []Option{WithDebug()}, zapcore.DebugLevel, nil, func(logger *Logger) {
-		logger.Print("hello")
-		logger.Printf("world")
-		logger.Println("foo")
-	})
-}
-
-func TestLoggerWarnExpected(t *testing.T) {
-	checkMessages(t, zapcore.DebugLevel, nil, zapcore.WarnLevel, []string{
-		"hello",
-		"world",
-		"foo",
-	}, func(logger *Logger) {
-		logger.Warning("hello")
-		logger.Warningf("world")
-		logger.Warningln("foo")
-	})
-}
-
-func TestLoggerErrorExpected(t *testing.T) {
-	checkMessages(t, zapcore.DebugLevel, nil, zapcore.ErrorLevel, []string{
-		"hello",
-		"world",
-		"foo",
-	}, func(logger *Logger) {
-		logger.Error("hello")
-		logger.Errorf("world")
-		logger.Errorln("foo")
-	})
-}
-
-func TestLoggerFatalExpected(t *testing.T) {
-	checkMessages(t, zapcore.DebugLevel, nil, zapcore.FatalLevel, []string{
-		"hello",
-		"world",
-		"foo",
-	}, func(logger *Logger) {
-		logger.Fatal("hello")
-		logger.Fatalf("world")
-		logger.Fatalln("foo")
-	})
-}
-
-func TestLoggerTrueExpected(t *testing.T) {
-	checkLevel(t, zapcore.FatalLevel, false, func(logger *Logger) bool {
-		return logger.V(6)
-	})
-}
-
-func TestLoggerFalseExpected(t *testing.T) {
-	checkLevel(t, zapcore.FatalLevel, true, func(logger *Logger) bool {
-		return logger.V(0)
-	})
-}
-
-func checkLevel(
-	t testing.TB,
-	enab zapcore.LevelEnabler,
-	expectedBool bool,
-	f func(*Logger) bool,
-) {
-	withLogger(enab, nil, func(logger *Logger, observedLogs *observer.ObservedLogs) {
-		actualBool := f(logger)
-		require.Equal(t, expectedBool, actualBool)
-	})
-}
-
-func checkMessages(
-	t testing.TB,
-	enab zapcore.LevelEnabler,
-	opts []Option,
-	expectedLevel zapcore.Level,
-	expectedMessages []string,
-	f func(*Logger),
-) {
-	if expectedLevel == zapcore.FatalLevel {
-		expectedLevel = zapcore.WarnLevel
+	lcfg := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
+		Development: false,
+		Sampling: &zap.SamplingConfig{
+			Initial:    100,
+			Thereafter: 100,
+		},
+		Encoding:         "json",
+		EncoderConfig:    DefaultZapLoggerConfig.EncoderConfig,
+		OutputPaths:      []string{logPath},
+		ErrorOutputPaths: []string{logPath},
 	}
-	withLogger(enab, opts, func(logger *Logger, observedLogs *observer.ObservedLogs) {
-		f(logger)
-		logEntries := observedLogs.All()
-		require.Equal(t, len(expectedMessages), len(logEntries))
-		for i, logEntry := range logEntries {
-			require.Equal(t, expectedLevel, logEntry.Level)
-			require.Equal(t, expectedMessages[i], logEntry.Message)
-		}
-	})
+	gl, err := NewGRPCLoggerV2(lcfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// debug level is not enabled,
+	// so info level gRPC-side logging is discarded
+	gl.Info("etcd-logutil-1")
+	data, err := ioutil.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(data, []byte("etcd-logutil-1")) {
+		t.Fatalf("unexpected line %q", string(data))
+	}
+
+	gl.Warning("etcd-logutil-2")
+	data, err = ioutil.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(data, []byte("etcd-logutil-2")) {
+		t.Fatalf("can't find data in log %q", string(data))
+	}
+	// if !bytes.Contains(data, []byte("logutil/zap_grpc_test.go:")) {
+	// 	t.Fatalf("unexpected caller; %q", string(data))
+	// }
 }
 
-func withLogger(
-	enab zapcore.LevelEnabler,
-	opts []Option,
-	f func(*Logger, *observer.ObservedLogs),
-) {
-	core, observedLogs := observer.New(enab)
-	f(NewLogger(zap.New(core), append(opts, withWarn())...), observedLogs)
-}
+func TestNewGRPCLoggerV2FromZapCore(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	syncer := zapcore.AddSync(buf)
+	cr := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		syncer,
+		zap.NewAtomicLevelAt(zap.InfoLevel),
+	)
 
-// withWarn redirects the fatal level to the warn level, which makes testing
-// easier.
-func withWarn() Option {
-	return optionFunc(func(logger *Logger) {
-		logger.fatal = (*zap.SugaredLogger).Warn
-		logger.fatalf = (*zap.SugaredLogger).Warnf
-	})
+	lg := NewGRPCLoggerV2FromZapCore(cr, syncer)
+	lg.Warning("TestNewGRPCLoggerV2FromZapCore")
+	txt := buf.String()
+	if !strings.Contains(txt, "TestNewGRPCLoggerV2FromZapCore") {
+		t.Fatalf("unexpected log %q", txt)
+	}
 }

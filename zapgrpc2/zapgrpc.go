@@ -20,153 +20,98 @@
 
 // Package zapgrpc2 provides a logger that is compatible with grpclog.
 package zapgrpc2 // import "go.uber.org/zap/zapgrpc2"
-
 import (
-	zap "go.uber.org/zap"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/grpclog"
 )
 
-// An Option overrides a Logger's default configuration.
-type Option interface {
-	apply(*Logger)
-}
-
-type optionFunc func(*Logger)
-
-func (f optionFunc) apply(log *Logger) {
-	f(log)
-}
-
-// WithDebug configures a Logger to print at zap's DebugLevel instead of
-// InfoLevel.
-func WithDebug() Option {
-	return optionFunc(func(logger *Logger) {
-		logger.print = (*zap.SugaredLogger).Debug
-		logger.printf = (*zap.SugaredLogger).Debugf
-	})
-}
-
-// WithVerbosity sets verbose level referred by V().
-func WithVerbosity(v int) Option {
-	return optionFunc(func(logger *Logger) {
-		logger.v = v
-	})
-}
-
-// NewLogger returns a new Logger.
-//
-// By default, Loggers print at zap's InfoLevel.
-func NewLogger(l *zap.Logger, options ...Option) *Logger {
-	logger := &Logger{
-		log:      l.Sugar(),
-		info:     (*zap.SugaredLogger).Info,
-		infof:    (*zap.SugaredLogger).Infof,
-		warning:  (*zap.SugaredLogger).Warn,
-		warningf: (*zap.SugaredLogger).Warnf,
-		err:      (*zap.SugaredLogger).Error,
-		errf:     (*zap.SugaredLogger).Errorf,
-		fatal:    (*zap.SugaredLogger).Fatal,
-		fatalf:   (*zap.SugaredLogger).Fatalf,
-		print:    (*zap.SugaredLogger).Info,
-		printf:   (*zap.SugaredLogger).Infof,
+// NewGRPCLoggerV2 converts "*zap.Logger" to "grpclog.LoggerV2".
+// It discards all INFO level logging in gRPC, if debug level
+// is not enabled in "*zap.Logger".
+func NewGRPCLoggerV2(lcfg zap.Config) (grpclog.LoggerV2, error) {
+	lg, err := lcfg.Build(zap.AddCallerSkip(1)) // to annotate caller outside of "logutil"
+	if err != nil {
+		return nil, err
 	}
-	for _, option := range options {
-		option.apply(logger)
+	return &zapGRPCLogger{lg: lg, sugar: lg.Sugar()}, nil
+}
+
+// NewGRPCLoggerV2FromZapCore creates "grpclog.LoggerV2" from "zap.Core"
+// and "zapcore.WriteSyncer". It discards all INFO level logging in gRPC,
+// if debug level is not enabled in "*zap.Logger".
+func NewGRPCLoggerV2FromZapCore(cr zapcore.Core, syncer zapcore.WriteSyncer) grpclog.LoggerV2 {
+	// "AddCallerSkip" to annotate caller outside of "logutil"
+	lg := zap.New(cr, zap.AddCaller(), zap.AddCallerSkip(1), zap.ErrorOutput(syncer))
+	return &zapGRPCLogger{lg: lg, sugar: lg.Sugar()}
+}
+
+type zapGRPCLogger struct {
+	lg    *zap.Logger
+	sugar *zap.SugaredLogger
+}
+
+func (zl *zapGRPCLogger) Info(args ...interface{}) {
+	if !zl.lg.Core().Enabled(zapcore.DebugLevel) {
+		return
 	}
-	return logger
+	zl.sugar.Info(args...)
 }
 
-// Logger adapts zap's Logger to be compatible with grpclog.Logger and grpclog.LoggerV2.
-type Logger struct {
-	v        int
-	log      *zap.SugaredLogger
-	info     func(*zap.SugaredLogger, ...interface{})
-	infof    func(*zap.SugaredLogger, string, ...interface{})
-	warning  func(*zap.SugaredLogger, ...interface{})
-	warningf func(*zap.SugaredLogger, string, ...interface{})
-	err      func(*zap.SugaredLogger, ...interface{})
-	errf     func(*zap.SugaredLogger, string, ...interface{})
-	fatal    func(*zap.SugaredLogger, ...interface{})
-	fatalf   func(*zap.SugaredLogger, string, ...interface{})
-	print    func(*zap.SugaredLogger, ...interface{})
-	printf   func(*zap.SugaredLogger, string, ...interface{})
+func (zl *zapGRPCLogger) Infoln(args ...interface{}) {
+	if !zl.lg.Core().Enabled(zapcore.DebugLevel) {
+		return
+	}
+	zl.sugar.Info(args...)
 }
 
-// Info implements grpclog.LoggerV2.
-func (l *Logger) Info(args ...interface{}) {
-	l.info(l.log, args...)
+func (zl *zapGRPCLogger) Infof(format string, args ...interface{}) {
+	if !zl.lg.Core().Enabled(zapcore.DebugLevel) {
+		return
+	}
+	zl.sugar.Infof(format, args...)
 }
 
-// Infof implements grpclog.LoggerV2.
-func (l *Logger) Infof(format string, args ...interface{}) {
-	l.infof(l.log, format, args...)
+func (zl *zapGRPCLogger) Warning(args ...interface{}) {
+	zl.sugar.Warn(args...)
 }
 
-// Infoln implements grpclog.LoggerV2.
-func (l *Logger) Infoln(args ...interface{}) {
-	l.info(l.log, args...)
+func (zl *zapGRPCLogger) Warningln(args ...interface{}) {
+	zl.sugar.Warn(args...)
 }
 
-// Warning implements grpclog.LoggerV2.
-func (l *Logger) Warning(args ...interface{}) {
-	l.warning(l.log, args...)
+func (zl *zapGRPCLogger) Warningf(format string, args ...interface{}) {
+	zl.sugar.Warnf(format, args...)
 }
 
-// Warningf implements grpclog.LoggerV2.
-func (l *Logger) Warningf(format string, args ...interface{}) {
-	l.warningf(l.log, format, args...)
+func (zl *zapGRPCLogger) Error(args ...interface{}) {
+	zl.sugar.Error(args...)
 }
 
-// Warningln implements grpclog.LoggerV2.
-func (l *Logger) Warningln(args ...interface{}) {
-	l.warning(l.log, args...)
+func (zl *zapGRPCLogger) Errorln(args ...interface{}) {
+	zl.sugar.Error(args...)
 }
 
-// Error implements grpclog.LoggerV2.
-func (l *Logger) Error(args ...interface{}) {
-	l.err(l.log, args...)
+func (zl *zapGRPCLogger) Errorf(format string, args ...interface{}) {
+	zl.sugar.Errorf(format, args...)
 }
 
-// Errorf implements grpclog.LoggerV2.
-func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.errf(l.log, format, args...)
+func (zl *zapGRPCLogger) Fatal(args ...interface{}) {
+	zl.sugar.Fatal(args...)
 }
 
-// Errorln implements grpclog.LoggerV2.
-func (l *Logger) Errorln(args ...interface{}) {
-	l.err(l.log, args...)
+func (zl *zapGRPCLogger) Fatalln(args ...interface{}) {
+	zl.sugar.Fatal(args...)
 }
 
-// Fatal implements grpclog.Logger and grpclog.LoggerV2.
-func (l *Logger) Fatal(args ...interface{}) {
-	l.fatal(l.log, args...)
+func (zl *zapGRPCLogger) Fatalf(format string, args ...interface{}) {
+	zl.sugar.Fatalf(format, args...)
 }
 
-// Fatalf implements grpclog.Logger and grpclog.LoggerV2.
-func (l *Logger) Fatalf(format string, args ...interface{}) {
-	l.fatalf(l.log, format, args...)
-}
-
-// Fatalln implements grpclog.Logger and grpclog.LoggerV2.
-func (l *Logger) Fatalln(args ...interface{}) {
-	l.fatal(l.log, args...)
-}
-
-// Print implements grpclog.Logger.
-func (l *Logger) Print(args ...interface{}) {
-	l.print(l.log, args...)
-}
-
-// Printf implements grpclog.Logger.
-func (l *Logger) Printf(format string, args ...interface{}) {
-	l.printf(l.log, format, args...)
-}
-
-// Println implements grpclog.Logger.
-func (l *Logger) Println(args ...interface{}) {
-	l.print(l.log, args...)
-}
-
-// V implements grpclog.LoggerV2.
-func (l *Logger) V(lvl int) bool {
-	return lvl <= l.v
+func (zl *zapGRPCLogger) V(l int) bool {
+	// infoLog == 0
+	if l <= 0 { // debug level, then we ignore info level in gRPC
+		return !zl.lg.Core().Enabled(zapcore.DebugLevel)
+	}
+	return true
 }
